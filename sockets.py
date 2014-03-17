@@ -15,7 +15,7 @@
 #
 
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect
 from flask_sockets import Sockets
 import gevent
 from gevent import queue
@@ -94,12 +94,12 @@ def send_all_json(obj):
     send_all(json.dumps(obj))
 
 
-@app.route('/')
+@sockets.route('/')
 def hello():
     '''Return something coherent here..
     perhaps redirect to /static/index.html
     '''
-    return app.redirect('/static/index.html')
+    return redirect('/static/index.html', code=302)
 
 
 def read_ws(ws, client):
@@ -150,7 +150,7 @@ def flask_post_json():
         return json.loads(request.form.keys()[0])
 
 
-@app.route("/entity/<entity>", methods=['POST', 'PUT'])
+@sockets.route("/entity/<entity>", methods=['POST', 'PUT'])
 def update(entity):
     '''update the entities via this interface'''
     v = flask_post_json()
@@ -162,13 +162,13 @@ def update(entity):
     return json.dumps(myWorld.get(entity))
 
 
-@app.route("/world", methods=['POST', 'GET'])
+@sockets.route("/world", methods=['POST', 'GET'])
 def world():
     '''you should probably return the world here'''
     return json.dumps(myWorld.world())
 
 
-@app.route("/entity/<entity>")
+@sockets.route("/entity/<entity>")
 def get_entity(entity):
     '''This is the GET version of the entity interface,
     return a representation of the
@@ -176,7 +176,7 @@ def get_entity(entity):
     return json.dumps(myWorld.get(entity))
 
 
-@app.route("/clear", methods=['POST', 'GET'])
+@sockets.route("/clear", methods=['POST', 'GET'])
 def clear():
     '''Clear the world out!'''
     myWorld.clear()
