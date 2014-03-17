@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright (c) 2013-2014 Abram Hindle
+# Copyright (c) 2013-2014 Abram Hindle, Tyler Davidson
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -79,8 +79,10 @@ clients = list()
 
 
 def set_listener(entity, data):
+    print("set_listener printy thing")
     ''' do something with the update ! '''
     myWorld.set(entity, data)
+
 
 myWorld.add_set_listener(set_listener)
 
@@ -94,12 +96,12 @@ def send_all_json(obj):
     send_all(json.dumps(obj))
 
 
-@sockets.route('/')
+@app.route('/')
 def hello():
     '''Return something coherent here..
     perhaps redirect to /static/index.html
     '''
-    return redirect('/static/index.html', code=302)
+    return redirect('static/index.html')
 
 
 def read_ws(ws, client):
@@ -109,13 +111,13 @@ def read_ws(ws, client):
     try:
         while True:
             msg = ws.receive()
-            print "WS RECV: %s" % msg
+            print("WS RECV: %s" % msg)
             if (msg is not None):
                 packet = json.loads(msg)
                 send_all_json(packet)
             else:
                 break
-    except:
+    except Exception as e:
         '''Done'''
 
 
@@ -133,55 +135,21 @@ def subscribe_socket(ws):
             msg = client.get()
             ws.send(msg)
     except Exception as e:  # WebSocketError as e:
-        print "WS Error %s" % e
+        print("WS Error %s" % e)
     finally:
         clients.remove(client)
         gevent.kill(g)
 
 
-def flask_post_json():
-    '''Ah the joys of frameworks! They do so much work for you
-       that they get in the way of sane operation!'''
-    if (request.json is not None):
-        return request.json
-    elif (request.data is not None and request.data != ''):
-        return json.loads(request.data)
-    else:
-        return json.loads(request.form.keys()[0])
-
-
-@sockets.route("/entity/<entity>", methods=['POST', 'PUT'])
-def update(entity):
-    '''update the entities via this interface'''
-    v = flask_post_json()
-    if request.method == 'POST':
-        myWorld.set(entity, v)
-    if request.method == 'PUT':
-        for key in v:
-            myWorld.update(entity, key, v[key])
-    return json.dumps(myWorld.get(entity))
-
-
-@sockets.route("/world", methods=['POST', 'GET'])
-def world():
-    '''you should probably return the world here'''
-    return json.dumps(myWorld.world())
-
-
-@sockets.route("/entity/<entity>")
-def get_entity(entity):
-    '''This is the GET version of the entity interface,
-    return a representation of the
-    entity'''
-    return json.dumps(myWorld.get(entity))
-
-
-@sockets.route("/clear", methods=['POST', 'GET'])
-def clear():
-    '''Clear the world out!'''
-    myWorld.clear()
-    return json.dumps(myWorld.world())
-
+# def flask_post_json():
+#     '''Ah the joys of frameworks! They do so much work for you
+#        that they get in the way of sane operation!'''
+#     if (request.json is not None):
+#         return request.json
+#     elif (request.data is not None and request.data != ''):
+#         return json.loads(request.data)
+#     else:
+#         return json.loads(request.form.keys()[0])
 
 if __name__ == "__main__":
     ''' This doesn't work well anymore:
